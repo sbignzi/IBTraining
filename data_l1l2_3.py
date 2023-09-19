@@ -1,5 +1,3 @@
-# from ibapi.client import EClient
-# from ibapi.wrapper import EWrapper
 from tools.ib_class import ib_class
 from ibapi.contract import Contract
 from tools.connect_to_server import connect_to_server
@@ -7,6 +5,7 @@ import os
 import sys
 from settings import settings
 from tools.create_contract_object import createContract
+from ibapi.execution import ExecutionFilter
 
 module_path = os.path.abspath(os.path.join('..'))
 if module_path not in sys.path:
@@ -86,6 +85,7 @@ symbol = 'ZN'
 app.position_config['contract'] = settings[symbol]['contract']
 
 contract = app.position_config['contract']
+
 c = createContract(contract)
 
 # contract = Contract()
@@ -94,7 +94,14 @@ c = createContract(contract)
 # contract.exchange = "CBOT"
 # contract.lastTradeDateOrContractMonth = "202309"
 
-app.reqMktDepth(1, c, 5, False, [])
+# app.reqMktDepth(1, c, 5, False, [])
+# app.reqMktData(1, c, "", False, False, [])
+# app.reqExecutions(10001, ExecutionFilter())
+# Request executed orders for all participants at Level 0
+filter = ExecutionFilter()
+# Leave the filter empty to get executions for all participants
+# app.reqExecutions(1, filter)
+app.reqTickByTickData(19001, c, "AllLast", 0, False)
 
 # app.run()  # Start the event loop
 

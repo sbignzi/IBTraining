@@ -1,5 +1,6 @@
 from ibapi.client import EClient
 from ibapi.wrapper import EWrapper
+from ibapi.commission_report import CommissionReport
 import threading
 
 import time
@@ -19,7 +20,7 @@ class ib_class(EWrapper, EClient):
 
     def __init__(self):
         EClient.__init__(self, self)
-        self.nextValidOrderId = 1000
+        self.nextValidOrderId = 1001
         self.position_config = {
             # 'contract':{'symbol' : 'AAPL',
             # 'secType' : 'STK',
@@ -42,9 +43,9 @@ class ib_class(EWrapper, EClient):
     def error(self, reqId, errorCode, errorString, advancedOrderRejectJson=None):
         print("error: {} {} {} {}".format(reqId, errorCode, errorString, advancedOrderRejectJson))
     # this method are trigred after establishing a connection
-    # def nextValidId(self, orderId:int):
-    #     print('connection')
-    #     self.nextValidOrderId = orderId
+    def nextValidId(self, orderId:int):
+        print('connection')
+        self.nextValidOrderId = orderId
     #     self.connection_event.set()
     def get_next_order_id(self):
         # Increment the order ID counter and return the next ID
@@ -183,9 +184,47 @@ class ib_class(EWrapper, EClient):
     #     print(market_depth_event)
     def tickPrice(self, reqId, tickType, price, attrib):
         # Handle price updates here
-        if tickType == 45:  # Execution data
-            print(f"Execution Price: {price}")
-            
+        # if tickType == 45:  # Execution data
+        print('tickType', tickType)
+        print(f"Execution Price: {price}")
+    
+    def tickSize(self, reqId, tickType, size):
+        super().tickSize(reqId, tickType, size)
+        # if tickType == 45:  # Execution data
+        print('tickType', tickType)
+        print("TickSize. TickerId:", reqId, "TickType:", tickType, "Size: ", size)
+
+    def tickByTickBidAsk(self, reqId: int, time: int, bidPrice: float, askPrice: float,
+                              bidSize, askSize, tickAttribBidAsk):
+        super().tickByTickBidAsk(reqId, time, bidPrice, askPrice, bidSize,
+                                    askSize, tickAttribBidAsk)
+        print("BidAsk. ReqId:", reqId,
+                "Time:", datetime.datetime.fromtimestamp(time).strftime("%Y%m%d-%H:%M:%S"),
+                "BidPrice:", bidPrice, "AskPrice:", askPrice, "BidSize:", bidSize,
+                "AskSize:", askSize, "BidPastLow:", tickAttribBidAsk.bidPastLow, "AskPastHigh:", tickAttribBidAsk.askPastHigh)  
+         
+
+    def tickByTickAllLast(self, reqId: int, tickType: int, time: int, price: float,
+                              size, tickAtrribLast, exchange: str,
+                              specialConditions: str):
+        super().tickByTickAllLast(reqId, tickType, time, price, size, tickAtrribLast,
+                                    exchange, specialConditions)
+        if tickType == 1:
+            print("Last.", end='')
+        else:
+            print("AllLast.", end='')
+        print(" ReqId:", reqId,
+            "Time:", datetime.fromtimestamp(time).strftime("%Y%m%d-%H:%M:%S"),
+                "Price:", price, "Size:", size, "Exch:" , exchange,
+                "Spec Cond:", specialConditions, "PastLimit:", tickAtrribLast.pastLimit, "Unreported:", tickAtrribLast.unreported)      
+    
+    # def tickByTickAllLast(self, reqId: int, tickType: int, time: int, price: float, size: int, tickAttribLast, exchange: str, specialConditions: str):
+    #     super().tickByTickAllLast(reqId, tickType, time, price, size, tickAttribLast,
+    #                             exchange, specialConditions)
+    
+    #     print(f"reqId: {reqId}, tickType: {tickType}, time: {datetime.fromtimestamp(time)}, price: {price}, size: {size}, tickAttribLast: {tickAttribLast}, exchange: {exchange}, specialConditions: {specialConditions}")
+
+    
     def execDetails(self, reqId, contract, execution):
         """
         This method is called when execution details are received.
@@ -211,12 +250,15 @@ class ib_class(EWrapper, EClient):
         #     op = ''
         # if position != 0:
         print('Agression =================================')
-        tick_type = self.DOM[execution.price]['side']
+        if str(execution.price) in self.DOM:
+            tick_type = self.DOM[str(execution.price)]['side']
+        else:
+            tick_type = ''
         event = 'Agr'
         op = ''
 
-      
-        self.DOM[execution.price] = {'side':tick_type, 'volum':self.DOM[execution.price]['volum']-execution.shares }
+        if str(execution.price) in self.DOM:
+            self.DOM[str(execution.price)] = {'side':tick_type, 'volum':self.DOM[execution.price]['volum']-execution.shares }
         
         market_depth_event = {
             'Date': date_time.split()[0],
@@ -243,7 +285,11 @@ class ib_class(EWrapper, EClient):
         reqId: The request ID used for the execution request.
         """
         print("All Execution Details Received for Request ID:", reqId)
-        def accountSummary(self, reqId, account, tag, value, currency):
-            index = str(account)
-            self.all_accounts.loc[index]=reqId, account, tag, value, currency
 
+    def accountSummary(self, reqId, account, tag, value, currency):
+        index = str(account)
+        self.all_accounts.loc[index]=reqId, account, tag, value, currency
+
+    # def commissionReport(self, commissionReport: CommissionReport):
+    #     super().commissionReport(commissionReport)
+    #     print("CommissionReport.", commissionReport)

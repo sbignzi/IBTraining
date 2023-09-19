@@ -19,7 +19,9 @@ def place_order(app):
     #      c1.lastTradeDateOrContractMonth = contract['lastTradeDateOrContractMonth']
     c1 = createContract(contract)
     # orderId = app.nextValidOrderId 
-    orderId = app.get_next_order_id() 
+    # orderId = app.get_next_order_id() 
+    orderId = app.nextValidOrderId
+    print('orderId', orderId)
     # orderId = 1
 
     # create the entry order
@@ -34,6 +36,8 @@ def place_order(app):
     # entryOrder.lmtPrice = 140
     entryOrder.lmtPrice = entry_order['lmtPrice']
     entryOrder.transmit = entry_order['transmit']
+    entryOrder.eTradeOnly=''
+    entryOrder.firmQuoteOnly=''
 
     if 'profitOrder' in app.position_config:
         # create the profit order
@@ -47,6 +51,8 @@ def place_order(app):
         # profitOrder.lmtPrice = 141
         profitOrder.lmtPrice = profit_order['lmtPrice']
         profitOrder.transmit = profit_order['transmit']
+        profitOrder.eTradeOnly=''
+        profitOrder.firmQuoteOnly=''
     if 'stopLossOrder' in app.position_config:
         # create the stop loss order
         stopLossOrder = Order()
@@ -58,6 +64,8 @@ def place_order(app):
         stopLossOrder.totalQuantity = stop_loss_order['totalQuantity']
         stopLossOrder.auxPrice = stop_loss_order['auxPrice']
         stopLossOrder.transmit = stop_loss_order['transmit']
+        stopLossOrder.eTradeOnly=''
+        stopLossOrder.firmQuoteOnly=''
 
     # place an order
     app.placeOrder(orderId, c1, entryOrder)

@@ -21,12 +21,13 @@ def read_positions(): #read all accounts positions and return DataFrame with inf
     app = ib_class()    
   
     connect_to_server(app)
+    print(app.nextValidOrderId)
 
     symbol = 'AAPL'
     app.position_config['contract'] = settings[symbol]
-    app.position_config['entryOrder']={'action':'BUY','orderType':'LMT', 'totalQuantity':2, 'lmtPrice':178 , 'transmit':False}
-    app.position_config['profitOrder']={'action':'SELL','orderType':'LMT', 'totalQuantity':2, 'lmtPrice':179 , 'transmit':False}
-    app.position_config['stopLossOrder']={'action':'SELL','orderType':'STOP', 'totalQuantity':2, 'auxPrice':177 , 'transmit':True}
+    app.position_config['entryOrder']={'action':'SELL','orderType':'LMT', 'totalQuantity':2, 'lmtPrice':178 , 'transmit':False}
+    app.position_config['profitOrder']={'action':'BUY','orderType':'LMT', 'totalQuantity':2, 'lmtPrice':179 , 'transmit':False}
+    app.position_config['stopLossOrder']={'action':'BUY','orderType':'STOP', 'totalQuantity':2, 'auxPrice':177 , 'transmit':True}
 
    
      # Wait for a signal indicating that orders have been placed
