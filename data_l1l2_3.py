@@ -104,8 +104,8 @@ app.reqMktDepth(1, c, 5, False, [])
 market_depth_data = pd.DataFrame(app.market_depth_data, columns=["Date", "Type", "Position", "Operation", "Price", "Volume"])
 
 # Print the dataframes or save them to a file as needed
-print("market_depth_data Data:")
-print(market_depth_data)
+# print("market_depth_data Data:")
+# print(market_depth_data)
 
 
 # if __name__ == "__main__":

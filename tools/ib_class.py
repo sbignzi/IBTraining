@@ -28,6 +28,8 @@ class ib_class(EWrapper, EClient):
             # 'primaryExchange' : 'NASDAQ'}
             }
         
+        self.DOM = {}
+        
         # self.executed_orders = pd.DataFrame([], columns = ['Account','Symbol', 'Quantity', 'Average Cost', 'Sec Type', 'Direction'])
         self.executed_orders = {}
         self.not_executed_orders = []
@@ -103,16 +105,31 @@ class ib_class(EWrapper, EClient):
 
         date_time = datetime.fromtimestamp(int(time.time())).strftime('%Y-%m-%d %H:%M:%S')
         
-        if position == 0:
-            print('Agression =================================')
-            tick_type = "lastAsk" if side == 0 else "lastBid"
-            event = 'Agr'
-            op = ''
-        if position != 0:
-            print('Depth =================================')
-            tick_type = "Ask" if side == 0 else "Bid"
-            event = 'Dep'
-            op = 'Update'
+        # if position == 0:
+        #     print('Agression =================================')
+        #     tick_type = "lastAsk" if side == 0 else "lastBid"
+        #     event = 'Agr'
+        #     op = ''
+        # if position != 0:
+        print('Depth =================================')
+        tick_type = "Ask" if side == 0 else "Bid"
+        event = 'Dep'
+        op = 'Update'
+
+        if operation == 0:
+            if str(price) in self.DOM: 
+                volum = self.DOM[price]['volum']+size
+                # self.DOM[price]['volum']+=size
+            else:
+                volum = size
+                # self.DOM.update({str(price):{'volum':size, }})
+
+            self.DOM[price] = {'side':tick_type, 'volum':volum }
+        if operation != 0:
+            if str(price) in self.DOM:
+                self.DOM[price] = {'side':tick_type, 'volum':self.DOM[price]['volum']-size }
+            else:
+               self.DOM[price] = {'side':tick_type, 'volum':0 } 
         
         market_depth_event = {
             'Date': date_time.split()[0],
@@ -125,9 +142,12 @@ class ib_class(EWrapper, EClient):
             'Price': price,
             'Volume': size
         }
+
+        
         
         # Append the data to the list
         self.market_depth_data.append(market_depth_event)
+        print(len(self.market_depth_data))
         print(market_depth_event)
 
     # def updateMktDepthL2(self, reqId, position, marketMaker, operation, side, price, size, isSmartDepth):
@@ -161,8 +181,69 @@ class ib_class(EWrapper, EClient):
     #     # Append the data to the list
     #     self.market_depth_data.append(market_depth_event)
     #     print(market_depth_event)
+    def tickPrice(self, reqId, tickType, price, attrib):
+        # Handle price updates here
+        if tickType == 45:  # Execution data
+            print(f"Execution Price: {price}")
+            
+    def execDetails(self, reqId, contract, execution):
+        """
+        This method is called when execution details are received.
+        reqId: The request ID used for the execution request.
+        contract: The Contract object associated with the executed order.
+        execution: The Execution object containing execution details.
+        """
+        print("Execution Details Received:")
+        print("Request ID:", reqId)
+        print("Contract:", contract.symbol, contract.secType, contract.currency)
+        print("Execution ID:", execution.execId)
+        print("Execution Price:", execution.price)
+        print("Execution Quantity:", execution.shares)
+        print("Execution Time:", execution.time)
 
-    def accountSummary(self, reqId, account, tag, value, currency):
-        index = str(account)
-        self.all_accounts.loc[index]=reqId, account, tag, value, currency
+
+        date_time = datetime.fromtimestamp(int(time.time())).strftime('%Y-%m-%d %H:%M:%S')
+        
+        # if position == 0:
+        #     print('Agression =================================')
+        #     tick_type = "lastAsk" if side == 0 else "lastBid"
+        #     event = 'Agr'
+        #     op = ''
+        # if position != 0:
+        print('Agression =================================')
+        tick_type = self.DOM[execution.price]['side']
+        event = 'Agr'
+        op = ''
+
+      
+        self.DOM[execution.price] = {'side':tick_type, 'volum':self.DOM[execution.price]['volum']-execution.shares }
+        
+        market_depth_event = {
+            'Date': date_time.split()[0],
+            'Time': date_time.split()[1],
+            'Msec': int(time.time() * 1000) % 1000,
+            'Event': event,
+            'Type': tick_type,
+            'Position': 0,
+            'Operation': op,
+            'Price': execution.price,
+            'Volume': execution.shares
+        }
+
+        
+        
+        # Append the data to the list
+        self.market_depth_data.append(market_depth_event)
+        print(market_depth_event)
+        # Additional execution details can be accessed through the 'execution' object
+
+    def execDetailsEnd(self, reqId):
+        """
+        This method is called when all execution details have been received for a request.
+        reqId: The request ID used for the execution request.
+        """
+        print("All Execution Details Received for Request ID:", reqId)
+        def accountSummary(self, reqId, account, tag, value, currency):
+            index = str(account)
+            self.all_accounts.loc[index]=reqId, account, tag, value, currency
 
